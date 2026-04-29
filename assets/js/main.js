@@ -164,7 +164,7 @@ const UTC_CITIES = {
   "12": ["Auckland", "Fiji", "Chatham Islands"]
 };
 
-const bgMusic = new Audio("assets/sfx/Persona-rain.mp3");
+const bgMusic = new Audio("assets/sfx/Persona-Rain.mp3");
 bgMusic.loop = true;
 bgMusic.volume = 0.1;
 
