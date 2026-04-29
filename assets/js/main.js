@@ -22,7 +22,7 @@ const utc = getUTCOffset();
 const clockEl = document.getElementById("clock");
 
 if (clockEl) {
-    clockEl.textContent = `${timeString} (${utc} | ${tz})`;
+    clockEl.textContent = `${timeString} (${utc} | ${tz} |`;
 }
 }
 
@@ -90,7 +90,7 @@ function initHoverTimezones() {
 
     zone.addEventListener("mouseleave", () => {
       display.textContent =
-        "Hover a Timezone | UTC | Cities |";
+        "Hover a Timezone | UTC | Cities | Add hour for daylight saving";
     });
 
   });
@@ -110,7 +110,7 @@ function initHoverTimezones() {
       const cities = UTC_CITIES[offset] || ["Unknown"];
 
       display.innerHTML =
-        `LOCAL TIME - UTC${offset >= 0 ? "+" : ""}${offset} | ${cities.join(" • ")} | ${time}`;
+        `TIME - ${time} (UTC${offset >= 0 ? "+" : ""}${offset} | ${cities.join(" • ")} |`;
       zone.classList.add("flash");
 
       setTimeout(() => {
@@ -120,7 +120,7 @@ function initHoverTimezones() {
 
     zone.addEventListener("mouseleave", () => {
       display.textContent =
-        "LOCAL TIME - Hover a Timezone | UTC | Cities | Time";
+        "Hover a Timezone | UTC | Cities |Add hour for daylight saving";
     });
   });
 }
@@ -163,3 +163,13 @@ const UTC_CITIES = {
   "11": ["Solomon Islands", "Vanuatu", "Magadan"],
   "12": ["Auckland", "Fiji", "Chatham Islands"]
 };
+
+const bgMusic = new Audio("assets/sfx/Persona-rain.mp3");
+bgMusic.loop = true;
+bgMusic.volume = 0.1;
+
+document.addEventListener("click", () => {
+  bgMusic.play().catch(err => {
+    console.log("Background music blocked:", err);
+  });
+}, { once: true });
