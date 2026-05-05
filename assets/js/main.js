@@ -1,33 +1,38 @@
+let DST_ENABLED = false;
+
+document.addEventListener("DOMContentLoaded", init);
+
 function init() {
-    updateClock();
-    updateTimezoneLabels();
-    initHoverTimezones();
+  updateClock();
+  updateTimezoneLabels();
+  initHoverTimezones();
+  initZoneClick();
+  initDSTToggle();
 
-    setInterval(updateClock, 1000);
-    setInterval(updateTimezoneLabels, 60 * 1000);
+  setInterval(updateClock, 1000);
+  setInterval(updateTimezoneLabels, 60000);
 }
-
 function updateClock() {
   const now = new Date();
 
   const timeString = now.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
   });
 
-const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const utc = getUTCOffset();
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const utc = getUTCOffset();
 
-const clockEl = document.getElementById("clock");
+  const clockEl = document.getElementById("clock");
 
-if (clockEl) {
-    clockEl.textContent = `${timeString} (${utc} | ${tz} |`;
-}
+  if (clockEl) {
+    clockEl.textContent = `(${utc} | ${tz} | ${timeString}`;
+  }
 }
 
 function getUTCOffset() {
-  const offsetMinutes = -new Date().getTimezoneOffset(); 
+  const offsetMinutes = -new Date().getTimezoneOffset();
 
   const sign = offsetMinutes >= 0 ? "+" : "-";
   const abs = Math.abs(offsetMinutes);
@@ -47,129 +52,129 @@ function updateTimezoneLabels() {
 
     if (!label) return;
 
-    if (baseOffset === 0) {
-      label.textContent = "UTC±0";
-    } else {
-      const sign = baseOffset > 0 ? "+" : "";
-      label.textContent = `UTC${sign}${baseOffset}`;
-    }
+    const displayOffset = DST_ENABLED ? baseOffset + 1 : baseOffset;
+
+    const sign = displayOffset > 0 ? "+" : "";
+    label.textContent = `UTC${sign}${displayOffset}`;
 
     const userOffset = -new Date().getTimezoneOffset() / 60;
 
-    if (baseOffset === userOffset) {
-      tz.style.background = "rgba(255, 255, 0, 0.15)";
+    if (displayOffset === userOffset) {
+      tz.style.background = "rgba(255,255,0,0.15)";
+    } else {
+      tz.style.background = "";
     }
   });
 }
 
-document.addEventListener("DOMContentLoaded", init);
-
 function initHoverTimezones() {
   const display = document.getElementById("hoverDisplay");
 
   document.querySelectorAll(".hover-zone").forEach(zone => {
 
     zone.addEventListener("mouseenter", () => {
-
       const rawOffset = parseInt(zone.dataset.offset);
 
-      const offset = rawOffset + 1;
+      const offset = DST_ENABLED ? rawOffset + 1 : rawOffset;
 
       const time = getTimeForOffset(offset);
-
       const cities = UTC_CITIES[offset] || ["Unknown"];
 
-      const cityText = cities.join(" • ");
-
-      const utcLabel =
-        `UTC${offset >= 0 ? "+" : ""}${offset}`;
-
-      display.innerHTML =
-        `TIME - ${time} (${utcLabel} | ${cityText})`;
-    });
-
-    zone.addEventListener("mouseleave", () => {
       display.textContent =
-        "Hover a Timezone | UTC | Cities | Add hour for daylight saving";
-    });
+        `UTC${offset >= 0 ? "+" : ""}${offset} | ${cities.join(" • ")} | ${time}`;
 
-  });
-}
-
-function initHoverTimezones() {
-  const display = document.getElementById("hoverDisplay");
-
-  document.querySelectorAll(".hover-zone").forEach(zone => {
-
-    zone.addEventListener("mouseenter", () => {
-
-      const rawOffset = parseInt(zone.dataset.offset);
-      const offset = rawOffset;
-
-      const time = getTimeForOffset(offset);
-      const cities = UTC_CITIES[offset] || ["Unknown"];
-
-      display.innerHTML =
-        `TIME - ${time} (UTC${offset >= 0 ? "+" : ""}${offset} | ${cities.join(" • ")} |`;
       zone.classList.add("flash");
 
       setTimeout(() => {
         zone.classList.remove("flash");
-      }, 600);
+      }, 500);
     });
 
     zone.addEventListener("mouseleave", () => {
-      display.textContent =
-        "Hover a Timezone | UTC | Cities |Add hour for daylight saving";
+      display.textContent = "Hover a Timezone | UTC | Cities";
+    });
+
+  });
+}
+
+function initZoneClick() {
+  document.querySelectorAll(".hover-zone").forEach(zone => {
+    zone.addEventListener("click", () => {
+      const offset = zone.dataset.offset;
+
+      console.log("clicked offset:", offset);
+
+      // Build filename directly
+      const page = `tz-${offset}.html`;
+
+      console.log("redirecting to:", page);
+
+      window.location.href = page;
     });
   });
 }
 
 function getTimeForOffset(offsetHours) {
   const now = new Date();
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const target = new Date(utc + (offsetHours * 3600000));
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+
+  const target = new Date(utc + offsetHours * 3600000);
+
   return target.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
   });
 }
 
-const UTC_CITIES = {
-  "-12": ["Baker Island", "Howland Island"],
-  "-11": ["Niue", "American Samoa", "Midway Atoll"],
-  "-10": ["Honolulu", "Hawaii", "Tahiti"],
-  "-9": ["Anchorage", "Alaska", "Gambell"],
-  "-8": ["Los Angeles", "Vancouver", "Tijuana"],
-  "-7": ["Denver", "Phoenix", "Calgary"],
-  "-6": ["Chicago", "Mexico City", "Guatemala City"],
-  "-5": ["New York", "Toronto", "Bogotá"],
-  "-4": ["Caracas", "Santiago", "Halifax"],
-  "-3": ["Buenos Aires", "São Paulo", "Montevideo"],
-  "-2": ["South Georgia", "Azores West", "Atlantic Islands"],
-  "-1": ["Azores", "Cape Verde", "Reykjavik"],
-  "0": ["London", "Accra", "Reykjavik"],
-  "1": ["Paris", "Berlin", "Rome"],
-  "2": ["Athens", "Cairo", "Johannesburg"],
-  "3": ["Moscow", "Istanbul", "Nairobi"],
-  "4": ["Dubai", "Baku", "Muscat"],
-  "5": ["Karachi", "Tashkent", "Islamabad"],
-  "6": ["Dhaka", "Almaty", "Thimphu"],
-  "7": ["Bangkok", "Jakarta", "Hanoi"],
-  "8": ["Beijing", "Singapore", "Perth"],
-  "9": ["Tokyo", "Seoul", "Pyongyang"],
-  "10": ["Sydney", "Brisbane", "Guam"],
-  "11": ["Solomon Islands", "Vanuatu", "Magadan"],
-  "12": ["Auckland", "Fiji", "Chatham Islands"]
-};
+function initDSTToggle() {
+  const btn = document.getElementById("dstToggle");
 
-const bgMusic = new Audio("assets/sfx/Persona-Rain.mp3");
-bgMusic.loop = true;
-bgMusic.volume = 0.1;
+  btn.addEventListener("click", () => {
+    DST_ENABLED = !DST_ENABLED;
 
-document.addEventListener("click", () => {
-  bgMusic.play().catch(err => {
-    console.log("Background music blocked:", err);
+    if (DST_ENABLED) {
+      btn.textContent = "Daylight Savings: ON";
+      btn.classList.remove("dst-off");
+      btn.classList.add("dst-on");
+    } else {
+      btn.textContent = "Daylight Savings: OFF";
+      btn.classList.remove("dst-on");
+      btn.classList.add("dst-off");
+    }
+
+    updateTimezoneLabels();
   });
-}, { once: true });
+}
+
+document.getElementById('blurBtn').addEventListener('click', () => {
+    document.getElementById('background-layer').classList.toggle('blurred-bg');
+});
+
+const TZ_PAGES = {
+  "-12": "tz-baker.html",
+  "-11": "tz-samoa.html",
+  "-10": "tz-honolulu.html",
+  "-9": "tz-anchorage.html",
+  "-8": "tz-losangeles.html",
+  "-7": "tz-denver.html",
+  "-6": "tz-chicago.html",
+  "-5": "tz-newyork.html",
+  "-4": "tz-caracas.html",
+  "-3": "tz-buenosaires.html",
+  "-2": "tz-southgeorgia.html",
+  "-1": "tz-azores.html",
+  "0": "tz-0.html",
+  "1": "tz-paris.html",
+  "2": "tz-athens.html",
+  "3": "tz-moscow.html",
+  "4": "tz-dubai.html",
+  "5": "tz-karachi.html",
+  "6": "tz-dhaka.html",
+  "7": "tz-bangkok.html",
+  "8": "tz-beijing.html",
+  "9": "tz-tokyo.html",
+  "10": "tz-sydney.html",
+  "11": "tz-solomon.html",
+  "12": "tz-auckland.html"
+};
